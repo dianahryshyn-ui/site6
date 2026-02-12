@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Showcase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -22,11 +22,13 @@
             padding: 0;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            /* Fix flickering on some browsers */
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #222;
+            background-color: #222; /* Default for desktop */
             color: var(--text-dark);
             height: 100vh;
             display: flex;
@@ -35,6 +37,8 @@
             overflow: hidden;
         }
 
+        /* --- Wrapper Logic --- */
+        /* Desktop: Phone Simulator */
         .mobile-wrapper {
             width: 100%;
             max-width: 375px;
@@ -47,13 +51,33 @@
             box-shadow: 0 0 50px rgba(0,0,0,0.5);
             border-radius: 40px;
             overflow: hidden;
+            /* Hardware acceleration fix */
+            transform: translateZ(0);
+        }
+
+        /* Mobile: Full Screen (Native App Feel) */
+        @media (max-width: 480px) {
+            body {
+                background-color: var(--light-bg);
+                height: 100%; /* Allow full height */
+                border-radius: 0;
+            }
+            .mobile-wrapper {
+                max-width: 100%;
+                max-height: 100%;
+                height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
         }
 
         header {
             flex-shrink: 0;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
-            padding: 20px;
+            -webkit-backdrop-filter: blur(12px);
+            padding: 15px 20px;
+            padding-top: max(15px, env(safe-area-inset-top)); /* Notch support */
             z-index: 10;
             border-bottom: 1px solid rgba(0,0,0,0.05);
             text-align: center;
@@ -64,9 +88,12 @@
         /* Slider Container */
         .slider-container {
             flex-grow: 1;
-            overflow: hidden; /* Hide anything outside */
+            overflow: hidden; 
             position: relative;
             cursor: grab;
+            /* Fix for white flashes/flickering */
+            backface-visibility: hidden;
+            transform: translate3d(0,0,0);
         }
         
         .slider-container:active {
@@ -80,23 +107,27 @@
             width: 100%;
             /* Will be controlled by JS */
             transform: translateX(0);
-            will-change: transform; /* Hint to browser for GPU optimization */
+            will-change: transform; 
+            /* Fix for flickering */
+            backface-visibility: hidden;
+            perspective: 1000px;
         }
         
-        /* Smooth transition class applied on release */
         .slider-track.transitioning {
-            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
         .product-slide {
-            min-width: 100%; /* Full width of container */
+            min-width: 100%; 
             height: 100%;
             padding: 20px 25px 120px 25px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            /* Prevent shrinking */
-            flex-shrink: 0; 
+            flex-shrink: 0;
+            
+            /* Ensure layer promotion to prevent repaint artifacts */
+            transform: translateZ(0);
         }
 
         .product-card {
@@ -112,13 +143,10 @@
             height: 520px;
             justify-content: space-between;
             
-            /* Add slight scale effect when dragging could be added here, but keep simple for smoothness first */
-            transform: scale(1);
-            transition: transform 0.3s;
+            /* Fix flickering borders/shadows */
+            backface-visibility: hidden; 
+            transform: translateZ(0); 
         }
-        
-        /* Optional: Scale down non-active cards slightly */
-        /* .slider-track.transitioning .product-slide:not(.active-slide) .product-card { transform: scale(0.95); opacity: 0.7; } */
 
         .img-container {
             width: 100%;
@@ -134,6 +162,8 @@
             max-height: 100%;
             object-fit: contain;
             filter: drop-shadow(0 15px 25px rgba(0,0,0,0.15));
+            /* Prevent image flicker */
+            transform: translateZ(0);
         }
         
         /* Options */
@@ -154,6 +184,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            /* Avoid tap highlight box on mobile */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .storage-tag.selected {
@@ -182,11 +214,13 @@
         .action-bar {
             position: absolute;
             bottom: 30px;
+            bottom: max(30px, env(safe-area-inset-bottom)); /* Notch support */
             left: 50%;
             transform: translateX(-50%);
             width: 88%;
             background: rgba(30, 30, 30, 0.9);
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             color: white;
             padding: 16px 25px;
             border-radius: 50px;
@@ -222,6 +256,8 @@
             border-radius: 10px;
             object-fit: contain;
             transition: all 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+            /* Fix animation glitch */
+            will-change: top, left, width, height, opacity;
         }
         @keyframes bump {
             0% { transform: translateX(-50%) scale(1); }
@@ -236,12 +272,14 @@
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
             z-index: 200;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             opacity: 0; visibility: hidden; transition: all 0.4s ease; padding: 30px;
         }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .close-icon { position: absolute; top: 25px; right: 25px; font-size: 1.5rem; cursor: pointer; color: #aaa; padding: 10px; }
+        .close-icon { position: absolute; top: max(25px, env(safe-area-inset-top)); right: 25px; font-size: 1.5rem; cursor: pointer; color: #aaa; padding: 10px; }
+        
         .form-view, .success-view { width: 100%; max-width: 320px; }
         .modal-title { font-size: 2rem; font-weight: 700; margin-bottom: 30px; text-align: center; color: #111; }
         .form-group { margin-bottom: 25px; }
@@ -351,87 +389,72 @@
             `).join('');
         }
 
-        // --- BUTTERY SMOOTH SLIDER LOGIC ---
+        // --- Logic ---
         let isDragging = false;
         let startPos = 0;
         let currentTranslate = 0;
         let prevTranslate = 0;
         let currentIndex = 0;
         
-        // Prevent default drag of images
+        // Prevent default drag
         track.ondragstart = () => false;
 
-        // Mouse Events
-        container.addEventListener('mousedown', touchStart);
-        container.addEventListener('mouseup', touchEnd);
-        container.addEventListener('mouseleave', () => { if(isDragging) touchEnd() });
-        container.addEventListener('mousemove', touchMove);
+        // Events
+        container.addEventListener('mousedown', startDrag);
+        container.addEventListener('touchstart', startDrag);
 
-        // Touch Events
-        container.addEventListener('touchstart', touchStart);
-        container.addEventListener('touchend', touchEnd);
-        container.addEventListener('touchmove', touchMove);
+        container.addEventListener('mouseup', endDrag);
+        container.addEventListener('mouseleave', () => { if(isDragging) endDrag() });
+        container.addEventListener('touchend', endDrag);
 
-        function touchStart(event) {
+        container.addEventListener('mousemove', moveDrag);
+        container.addEventListener('touchmove', moveDrag);
+
+        function startDrag(event) {
             isDragging = true;
-            // Get X position
             startPos = getPositionX(event);
-            
-            // Allow instant movement, remove CSS transition for direct control
             track.classList.remove('transitioning');
         }
 
-        function touchMove(event) {
+        function moveDrag(event) {
             if (isDragging) {
                 const currentPosition = getPositionX(event);
-                // Difference
                 const diff = currentPosition - startPos;
-                
-                // Set translate directly
                 currentTranslate = prevTranslate + diff;
-                
-                // Apply transform
                 setSliderPosition();
             }
         }
 
-        function touchEnd() {
+        function endDrag() {
             isDragging = false;
-            
-            // Re-enable CSS transition for smooth snap
-            track.classList.add('transitioning');
-            
             const movedBy = currentTranslate - prevTranslate;
-            const threshold = 80; // Needed px to swipe
-            
-            // Check slide direction
-            if (movedBy < -threshold && currentIndex < products.length - 1) {
-                currentIndex += 1;
-            } else if (movedBy > threshold && currentIndex > 0) {
-                currentIndex -= 1;
-            }
+            const threshold = 80;
 
-            // Calculate exact position for next slide
+            if (movedBy < -threshold && currentIndex < products.length - 1) currentIndex += 1;
+            if (movedBy > threshold && currentIndex > 0) currentIndex -= 1;
+
             setPositionByIndex();
         }
 
         function getPositionX(event) {
-            return event.type.includes('mouse') ? event.pageX : event.touches[0].clientX;
+            return event.type.includes('mouse') ? event.pageX : event.changedTouches[0].clientX;
         }
 
         function setSliderPosition() {
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            // Using translate3d forces GPU acceleration
+            track.style.transform = `translate3d(${currentTranslate}px, 0, 0)`;
         }
 
         function setPositionByIndex() {
+            track.classList.add('transitioning');
             const containerWidth = container.offsetWidth;
             currentTranslate = currentIndex * -containerWidth;
             prevTranslate = currentTranslate;
             setSliderPosition();
         }
         
-        // Handle Resize
         window.addEventListener('resize', () => {
+            track.classList.remove('transitioning'); // Remove transition for instant resize
             setPositionByIndex();
         });
 
@@ -460,17 +483,18 @@
             flyer.src = imgUrl;
             flyer.classList.add('flying-img');
             
-            flyer.style.top = (start.top - wrapRect.top) + 'px';
-            flyer.style.left = (start.left - wrapRect.left) + 'px';
+            // Calc positions relative to viewport for simpler math in full screen
+            flyer.style.top = start.top + 'px';
+            flyer.style.left = start.left + 'px';
             flyer.style.width = start.width + 'px';
             flyer.style.height = start.height + 'px';
             
-            wrapper.appendChild(flyer);
+            document.body.appendChild(flyer); // Append to body to fly over everything
 
             flyer.offsetHeight;
 
-            flyer.style.top = (end.top - wrapRect.top) + 'px';
-            flyer.style.left = (end.left - wrapRect.left) + 'px';
+            flyer.style.top = end.top + 'px';
+            flyer.style.left = end.left + 'px';
             flyer.style.width = '20px';
             flyer.style.height = '20px';
             flyer.style.opacity = '0';
